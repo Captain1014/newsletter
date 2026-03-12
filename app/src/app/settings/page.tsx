@@ -1,0 +1,315 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { getSettings, saveSettings } from "@/lib/storage";
+import { AppSettings } from "@/types";
+
+export default function SettingsPage() {
+  const router = useRouter();
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+
+  useEffect(() => {
+    setSettings(getSettings());
+  }, []);
+
+  if (!settings) return null;
+
+  function update(partial: Partial<AppSettings>) {
+    const next = { ...settings!, ...partial };
+    setSettings(next);
+    saveSettings(next);
+  }
+
+  function updateAI(partial: Partial<AppSettings["ai"]>) {
+    const ai = { ...settings!.ai, ...partial };
+    update({ ai });
+  }
+
+  return (
+    <div className="flex flex-col flex-1">
+      {/* Header */}
+      <header className="flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
+        <button
+          onClick={() => router.push("/")}
+          className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          aria-label="Back"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+        <h1 className="text-lg font-semibold">설정</h1>
+      </header>
+
+      <div className="flex-1 px-4 py-4 space-y-6 overflow-y-auto">
+        {/* AI Provider */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
+            AI 해설 설정
+          </h2>
+          <div className="space-y-3">
+            {/* Provider select */}
+            <div>
+              <label className="text-sm mb-1 block">AI 제공자</label>
+              <select
+                value={settings.ai.provider}
+                onChange={(e) =>
+                  updateAI({
+                    provider: e.target.value as "gemini" | "claude",
+                    model:
+                      e.target.value === "gemini"
+                        ? "gemini-2.5-flash"
+                        : "claude-haiku-4-5-20251001",
+                  })
+                }
+                className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+              >
+                <option value="gemini">Google Gemini (무료)</option>
+                <option value="claude">Anthropic Claude</option>
+              </select>
+            </div>
+
+            {/* API Key */}
+            <div>
+              <label className="text-sm mb-1 block">API 키</label>
+              <input
+                type="password"
+                value={settings.ai.apiKey}
+                onChange={(e) => updateAI({ apiKey: e.target.value })}
+                placeholder={
+                  settings.ai.provider === "gemini"
+                    ? "Gemini API key"
+                    : "Claude API key"
+                }
+                className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+              />
+            </div>
+
+            {/* Language */}
+            <div>
+              <label className="text-sm mb-1 block">해설 언어</label>
+              <select
+                value={settings.ai.language}
+                onChange={(e) => updateAI({ language: e.target.value })}
+                className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+              >
+                <option value="ko">한국어</option>
+                <option value="ja">日本語</option>
+                <option value="zh">中文</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* TTS */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
+            TTS 설정
+          </h2>
+          <div className="space-y-3">
+            {/* TTS Provider */}
+            <div>
+              <label className="text-sm mb-1 block">음성 엔진</label>
+              <select
+                value={settings.tts?.provider ?? "browser"}
+                onChange={(e) =>
+                  update({
+                    tts: {
+                      ...settings.tts,
+                      provider: e.target.value as "browser" | "google-cloud" | "gemini",
+                    },
+                  })
+                }
+                className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+              >
+                <option value="gemini">Gemini TTS (AI 키 공유, 무료)</option>
+                <option value="google-cloud">Google Cloud TTS (자연스러운 음성)</option>
+                <option value="browser">브라우저 내장 TTS (무료)</option>
+              </select>
+            </div>
+
+            {/* Gemini TTS voice */}
+            {settings.tts?.provider === "gemini" && (
+              <div>
+                <label className="text-sm mb-1 block">음성 선택</label>
+                <select
+                  value={settings.tts?.voice ?? "Kore"}
+                  onChange={(e) =>
+                    update({
+                      tts: { ...settings.tts, voice: e.target.value },
+                    })
+                  }
+                  className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+                >
+                  <option value="Kore">Kore (여성, 차분한)</option>
+                  <option value="Aoede">Aoede (여성, 밝은)</option>
+                  <option value="Puck">Puck (남성, 활기찬)</option>
+                  <option value="Charon">Charon (남성, 깊은)</option>
+                  <option value="Fenrir">Fenrir (남성, 자연스러운)</option>
+                </select>
+                <p className="text-xs text-zinc-400 mt-1">
+                  AI 해설 Gemini API 키를 공유합니다. 별도 키 불필요.
+                </p>
+              </div>
+            )}
+
+            {/* Google Cloud TTS API Key */}
+            {settings.tts?.provider === "google-cloud" && (
+              <>
+                <div>
+                  <label className="text-sm mb-1 block">Google Cloud API 키</label>
+                  <input
+                    type="password"
+                    value={settings.tts?.apiKey ?? ""}
+                    onChange={(e) =>
+                      update({
+                        tts: { ...settings.tts, apiKey: e.target.value },
+                      })
+                    }
+                    placeholder="Google Cloud API key"
+                    className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+                  />
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Google Cloud Console → Text-to-Speech API 활성화 → API 키 생성
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm mb-1 block">음성 선택</label>
+                  <select
+                    value={settings.tts?.voice ?? "en-US-Neural2-J"}
+                    onChange={(e) =>
+                      update({
+                        tts: { ...settings.tts, voice: e.target.value },
+                      })
+                    }
+                    className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+                  >
+                    <option value="en-US-Neural2-J">Neural2-J (남성, 자연스러운)</option>
+                    <option value="en-US-Neural2-F">Neural2-F (여성, 자연스러운)</option>
+                    <option value="en-US-Neural2-D">Neural2-D (남성, 깊은)</option>
+                    <option value="en-US-Neural2-C">Neural2-C (여성, 밝은)</option>
+                    <option value="en-US-Studio-O">Studio-O (남성, 프리미엄)</option>
+                    <option value="en-US-Studio-Q">Studio-Q (남성, 뉴스 앵커)</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {/* Speed */}
+            <div>
+              <label className="text-sm mb-1 block">
+                읽기 속도: {settings.ttsRate.toFixed(1)}x
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2.0"
+                step="0.1"
+                value={settings.ttsRate}
+                onChange={(e) =>
+                  update({ ttsRate: parseFloat(e.target.value) })
+                }
+                className="w-full accent-blue-500"
+              />
+              <div className="flex justify-between text-xs text-zinc-400 mt-1">
+                <span>0.5x</span>
+                <span>1.0x</span>
+                <span>2.0x</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Gmail 연동 */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
+            Gmail 연동
+          </h2>
+          <div>
+            <label className="text-sm mb-1 block">Google OAuth Client ID</label>
+            <input
+              type="text"
+              value={settings.googleClientId ?? ""}
+              onChange={(e) => update({ googleClientId: e.target.value })}
+              placeholder="xxxx.apps.googleusercontent.com"
+              className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+            />
+            <p className="text-xs text-zinc-400 mt-1">
+              Google Cloud Console → OAuth 2.0 클라이언트 ID 생성 (웹 애플리케이션)
+            </p>
+          </div>
+        </section>
+
+        {/* Sender whitelist */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
+            발신자 화이트리스트
+          </h2>
+          <div className="space-y-2">
+            {settings.senderWhitelist.map((sender, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  value={sender}
+                  onChange={(e) => {
+                    const list = [...settings.senderWhitelist];
+                    list[i] = e.target.value;
+                    update({ senderWhitelist: list });
+                  }}
+                  className="flex-1 p-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+                />
+                <button
+                  onClick={() => {
+                    const list = settings.senderWhitelist.filter(
+                      (_, idx) => idx !== i
+                    );
+                    update({ senderWhitelist: list });
+                  }}
+                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() =>
+                update({
+                  senderWhitelist: [...settings.senderWhitelist, ""],
+                })
+              }
+              className="w-full py-2 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 text-sm hover:border-blue-400 hover:text-blue-500"
+            >
+              + 발신자 추가
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
