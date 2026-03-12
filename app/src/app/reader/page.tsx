@@ -133,12 +133,12 @@ export default function ReaderPage() {
           }}
           disabled={currentIndex === 0}
           className="flex-1 flex items-center justify-center gap-1 py-3 rounded-xl text-sm font-medium bg-zinc-100 dark:bg-zinc-800 enabled:active:bg-zinc-200 dark:enabled:active:bg-zinc-700 disabled:opacity-30 transition-colors min-h-[44px]"
-          aria-label="이전"
+          aria-label="Previous"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          이전
+          Prev
         </button>
         <span className="text-xs text-zinc-400 whitespace-nowrap">
           {currentIndex + 1} / {total}
@@ -152,9 +152,9 @@ export default function ReaderPage() {
           }}
           disabled={currentIndex >= total - 1}
           className="flex-1 flex items-center justify-center gap-1 py-3 rounded-xl text-sm font-medium bg-zinc-100 dark:bg-zinc-800 enabled:active:bg-zinc-200 dark:enabled:active:bg-zinc-700 disabled:opacity-30 transition-colors min-h-[44px]"
-          aria-label="다음"
+          aria-label="Next"
         >
-          다음
+          Next
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>

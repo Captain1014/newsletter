@@ -34,7 +34,7 @@ export default function AIExplainer({ paragraph }: { paragraph: string }) {
       setExplanation(result);
     } catch (e) {
       setExplanation(
-        e instanceof Error ? e.message : "해설을 불러올 수 없습니다."
+        e instanceof Error ? e.message : "Failed to load explanation."
       );
     } finally {
       setIsLoadingExplanation(false);
@@ -49,10 +49,10 @@ export default function AIExplainer({ paragraph }: { paragraph: string }) {
         className="px-4 py-2 rounded-full text-sm font-medium bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
       >
         {isLoadingExplanation
-          ? "로딩..."
+          ? "Loading..."
           : showExplanation
-            ? "해설 닫기"
-            : "AI 해설"}
+            ? "Hide Explanation"
+            : "AI Explain"}
       </button>
 
       {showExplanation && explanation && (

@@ -40,7 +40,7 @@ export default function Home() {
     try {
       const fetched = await fetchNewsletters();
       if (fetched.length === 0) {
-        setError("새 뉴스레터가 없습니다.");
+        setError("No new newsletters found.");
       } else {
         // Merge with existing, avoid duplicates
         const existingIds = new Set(newsletters.map((n) => n.id));
@@ -50,10 +50,10 @@ export default function Home() {
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "메일을 가져올 수 없습니다.");
+      setError(e instanceof Error ? e.message : "Failed to fetch emails.");
       if (
         e instanceof Error &&
-        e.message.includes("토큰이 만료")
+        e.message.includes("Token expired")
       ) {
         setGmailLoggedIn(false);
       }
@@ -82,9 +82,13 @@ export default function Home() {
 
     if (paragraphs.length === 0) return;
 
+    const title = paragraphs[0].length > 60
+      ? paragraphs[0].slice(0, 60) + "..."
+      : paragraphs[0];
+
     const nl: Newsletter = {
       id: `paste-${Date.now()}`,
-      subject: paragraphs[0].slice(0, 60) + "...",
+      subject: title,
       from: "Pasted",
       date: new Date().toLocaleDateString(),
       paragraphs,
@@ -106,7 +110,7 @@ export default function Home() {
     try {
       startOAuth();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "로그인 실패");
+      setError(e instanceof Error ? e.message : "Login failed");
     }
   }
 
@@ -158,13 +162,13 @@ export default function Home() {
                 disabled={loading}
                 className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
-                {loading ? "불러오는 중..." : "Gmail 새로고침"}
+                {loading ? "Loading..." : "Refresh Gmail"}
               </button>
               <button
                 onClick={handleLogout}
                 className="px-4 py-3 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
               >
-                로그아웃
+                Logout
               </button>
             </>
           ) : (
@@ -190,7 +194,7 @@ export default function Home() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Gmail 연동하기
+              Connect Gmail
             </button>
           )}
         </div>
@@ -208,7 +212,7 @@ export default function Home() {
             onClick={() => setPasteMode(true)}
             className="w-full py-3 mb-4 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
           >
-            + 뉴스레터 붙여넣기
+            + Paste Newsletter
           </button>
         )}
 
@@ -218,7 +222,7 @@ export default function Home() {
             <textarea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
-              placeholder="뉴스레터 본문 (텍스트 또는 HTML)을 붙여넣으세요..."
+              placeholder="Paste newsletter content (text or HTML)..."
               className="w-full h-40 p-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
@@ -227,7 +231,7 @@ export default function Home() {
                 onClick={handlePaste}
                 className="flex-1 py-2 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors"
               >
-                읽기 시작
+                Start Reading
               </button>
               <button
                 onClick={() => {
@@ -236,7 +240,7 @@ export default function Home() {
                 }}
                 className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
               >
-                취소
+                Cancel
               </button>
             </div>
           </div>
@@ -260,8 +264,8 @@ export default function Home() {
             </svg>
             <p className="text-sm">
               {gmailLoggedIn
-                ? "Gmail에서 뉴스레터를 불러오거나 붙여넣기하세요"
-                : "Gmail을 연동하거나 뉴스레터를 붙여넣어 시작하세요"}
+                ? "Refresh Gmail or paste a newsletter to get started"
+                : "Connect Gmail or paste a newsletter to get started"}
             </p>
           </div>
         ) : (

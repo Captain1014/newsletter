@@ -30,7 +30,7 @@ function getTextContent(node: Element | Document): string {
 
 const MIN_PARAGRAPH_LENGTH = 200;
 
-function mergeShorParagraphs(paragraphs: string[]): string[] {
+function mergeShortParagraphs(paragraphs: string[]): string[] {
   const merged: string[] = [];
   let buffer = "";
 
@@ -68,7 +68,7 @@ export function htmlToParagraphs(html: string): string[] {
     .filter((p) => p.length > 20) // Filter out very short fragments (ads, footers)
     .filter((p) => !isBoilerplate(p));
 
-  return mergeShorParagraphs(paragraphs);
+  return mergeShortParagraphs(paragraphs);
 }
 
 const BOILERPLATE_PATTERNS = [
@@ -92,5 +92,5 @@ export function plainTextToParagraphs(text: string): string[] {
     .filter((p) => p.length > 20)
     .filter((p) => !isBoilerplate(p));
 
-  return mergeShorParagraphs(paragraphs);
+  return mergeShortParagraphs(paragraphs);
 }

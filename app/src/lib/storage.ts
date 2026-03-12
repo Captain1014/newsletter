@@ -8,9 +8,13 @@ const KEYS = {
 
 export function getSettings(): AppSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
-  const raw = localStorage.getItem(KEYS.SETTINGS);
-  if (!raw) return DEFAULT_SETTINGS;
-  return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  try {
+    const raw = localStorage.getItem(KEYS.SETTINGS);
+    if (!raw) return DEFAULT_SETTINGS;
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
 }
 
 export function saveSettings(settings: Partial<AppSettings>) {
@@ -23,17 +27,25 @@ export function saveSettings(settings: Partial<AppSettings>) {
 
 export function getProgress(newsletterId: string): ReadingProgress | null {
   if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(KEYS.PROGRESS);
-  if (!raw) return null;
-  const all: Record<string, ReadingProgress> = JSON.parse(raw);
-  return all[newsletterId] ?? null;
+  try {
+    const raw = localStorage.getItem(KEYS.PROGRESS);
+    if (!raw) return null;
+    const all: Record<string, ReadingProgress> = JSON.parse(raw);
+    return all[newsletterId] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function saveProgress(progress: ReadingProgress) {
-  const raw = localStorage.getItem(KEYS.PROGRESS);
-  const all: Record<string, ReadingProgress> = raw ? JSON.parse(raw) : {};
-  all[progress.newsletterId] = progress;
-  localStorage.setItem(KEYS.PROGRESS, JSON.stringify(all));
+  try {
+    const raw = localStorage.getItem(KEYS.PROGRESS);
+    const all: Record<string, ReadingProgress> = raw ? JSON.parse(raw) : {};
+    all[progress.newsletterId] = progress;
+    localStorage.setItem(KEYS.PROGRESS, JSON.stringify(all));
+  } catch {
+    // Ignore write errors
+  }
 }
 
 export function getOAuthToken(): string | null {

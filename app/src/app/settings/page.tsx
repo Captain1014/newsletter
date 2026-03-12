@@ -49,19 +49,19 @@ export default function SettingsPage() {
             />
           </svg>
         </button>
-        <h1 className="text-lg font-semibold">설정</h1>
+        <h1 className="text-lg font-semibold">Settings</h1>
       </header>
 
       <div className="flex-1 px-4 py-4 space-y-6 overflow-y-auto">
         {/* AI Provider */}
         <section>
           <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
-            AI 해설 설정
+            AI Explanation
           </h2>
           <div className="space-y-3">
             {/* Provider select */}
             <div>
-              <label className="text-sm mb-1 block">AI 제공자</label>
+              <label className="text-sm mb-1 block">AI Provider</label>
               <select
                 value={settings.ai.provider}
                 onChange={(e) =>
@@ -75,14 +75,14 @@ export default function SettingsPage() {
                 }
                 className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
               >
-                <option value="gemini">Google Gemini (무료)</option>
+                <option value="gemini">Google Gemini (Free)</option>
                 <option value="claude">Anthropic Claude</option>
               </select>
             </div>
 
             {/* API Key */}
             <div>
-              <label className="text-sm mb-1 block">API 키</label>
+              <label className="text-sm mb-1 block">API Key</label>
               <input
                 type="password"
                 value={settings.ai.apiKey}
@@ -98,18 +98,18 @@ export default function SettingsPage() {
 
             {/* Language */}
             <div>
-              <label className="text-sm mb-1 block">해설 언어</label>
+              <label className="text-sm mb-1 block">Explanation Language</label>
               <select
                 value={settings.ai.language}
                 onChange={(e) => updateAI({ language: e.target.value })}
                 className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
               >
-                <option value="ko">한국어</option>
-                <option value="ja">日本語</option>
-                <option value="zh">中文</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
+                <option value="ko">Korean</option>
+                <option value="ja">Japanese</option>
+                <option value="zh">Chinese</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
               </select>
             </div>
           </div>
@@ -118,12 +118,12 @@ export default function SettingsPage() {
         {/* TTS */}
         <section>
           <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
-            TTS 설정
+            TTS Settings
           </h2>
           <div className="space-y-3">
             {/* TTS Provider */}
             <div>
-              <label className="text-sm mb-1 block">음성 엔진</label>
+              <label className="text-sm mb-1 block">Voice Engine</label>
               <select
                 value={settings.tts?.provider ?? "browser"}
                 onChange={(e) =>
@@ -136,16 +136,16 @@ export default function SettingsPage() {
                 }
                 className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
               >
-                <option value="gemini">Gemini TTS (AI 키 공유, 무료)</option>
-                <option value="google-cloud">Google Cloud TTS (자연스러운 음성)</option>
-                <option value="browser">브라우저 내장 TTS (무료)</option>
+                <option value="gemini">Gemini TTS (Shares AI key, Free)</option>
+                <option value="google-cloud">Google Cloud TTS (Natural voice)</option>
+                <option value="browser">Browser Built-in TTS (Free)</option>
               </select>
             </div>
 
             {/* Gemini TTS voice */}
             {settings.tts?.provider === "gemini" && (
               <div>
-                <label className="text-sm mb-1 block">음성 선택</label>
+                <label className="text-sm mb-1 block">Voice</label>
                 <select
                   value={settings.tts?.voice ?? "Kore"}
                   onChange={(e) =>
@@ -155,14 +155,14 @@ export default function SettingsPage() {
                   }
                   className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
                 >
-                  <option value="Kore">Kore (여성, 차분한)</option>
-                  <option value="Aoede">Aoede (여성, 밝은)</option>
-                  <option value="Puck">Puck (남성, 활기찬)</option>
-                  <option value="Charon">Charon (남성, 깊은)</option>
-                  <option value="Fenrir">Fenrir (남성, 자연스러운)</option>
+                  <option value="Kore">Kore (Female, Calm)</option>
+                  <option value="Aoede">Aoede (Female, Bright)</option>
+                  <option value="Puck">Puck (Male, Energetic)</option>
+                  <option value="Charon">Charon (Male, Deep)</option>
+                  <option value="Fenrir">Fenrir (Male, Natural)</option>
                 </select>
                 <p className="text-xs text-zinc-400 mt-1">
-                  AI 해설 Gemini API 키를 공유합니다. 별도 키 불필요.
+                  Shares the Gemini API key from AI settings. No separate key needed.
                 </p>
               </div>
             )}
@@ -171,7 +171,7 @@ export default function SettingsPage() {
             {settings.tts?.provider === "google-cloud" && (
               <>
                 <div>
-                  <label className="text-sm mb-1 block">Google Cloud API 키</label>
+                  <label className="text-sm mb-1 block">Google Cloud API Key</label>
                   <input
                     type="password"
                     value={settings.tts?.apiKey ?? ""}
@@ -184,12 +184,12 @@ export default function SettingsPage() {
                     className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
                   />
                   <p className="text-xs text-zinc-400 mt-1">
-                    Google Cloud Console → Text-to-Speech API 활성화 → API 키 생성
+                    Google Cloud Console &rarr; Enable Text-to-Speech API &rarr; Create API Key
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-sm mb-1 block">음성 선택</label>
+                  <label className="text-sm mb-1 block">Voice</label>
                   <select
                     value={settings.tts?.voice ?? "en-US-Neural2-J"}
                     onChange={(e) =>
@@ -199,12 +199,12 @@ export default function SettingsPage() {
                     }
                     className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
                   >
-                    <option value="en-US-Neural2-J">Neural2-J (남성, 자연스러운)</option>
-                    <option value="en-US-Neural2-F">Neural2-F (여성, 자연스러운)</option>
-                    <option value="en-US-Neural2-D">Neural2-D (남성, 깊은)</option>
-                    <option value="en-US-Neural2-C">Neural2-C (여성, 밝은)</option>
-                    <option value="en-US-Studio-O">Studio-O (남성, 프리미엄)</option>
-                    <option value="en-US-Studio-Q">Studio-Q (남성, 뉴스 앵커)</option>
+                    <option value="en-US-Neural2-J">Neural2-J (Male, Natural)</option>
+                    <option value="en-US-Neural2-F">Neural2-F (Female, Natural)</option>
+                    <option value="en-US-Neural2-D">Neural2-D (Male, Deep)</option>
+                    <option value="en-US-Neural2-C">Neural2-C (Female, Bright)</option>
+                    <option value="en-US-Studio-O">Studio-O (Male, Premium)</option>
+                    <option value="en-US-Studio-Q">Studio-Q (Male, News Anchor)</option>
                   </select>
                 </div>
               </>
@@ -213,7 +213,7 @@ export default function SettingsPage() {
             {/* Speed */}
             <div>
               <label className="text-sm mb-1 block">
-                읽기 속도: {settings.ttsRate.toFixed(1)}x
+                Speed: {settings.ttsRate.toFixed(1)}x
               </label>
               <input
                 type="range"
@@ -235,10 +235,10 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Gmail 연동 */}
+        {/* Gmail Integration */}
         <section>
           <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
-            Gmail 연동
+            Gmail Integration
           </h2>
           <div>
             <label className="text-sm mb-1 block">Google OAuth Client ID</label>
@@ -250,7 +250,7 @@ export default function SettingsPage() {
               className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
             />
             <p className="text-xs text-zinc-400 mt-1">
-              Google Cloud Console → OAuth 2.0 클라이언트 ID 생성 (웹 애플리케이션)
+              Google Cloud Console &rarr; Create OAuth 2.0 Client ID (Web Application)
             </p>
           </div>
         </section>
@@ -258,7 +258,7 @@ export default function SettingsPage() {
         {/* Sender whitelist */}
         <section>
           <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
-            발신자 화이트리스트
+            Sender Whitelist
           </h2>
           <div className="space-y-2">
             {settings.senderWhitelist.map((sender, i) => (
@@ -305,7 +305,7 @@ export default function SettingsPage() {
               }
               className="w-full py-2 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 text-sm hover:border-blue-400 hover:text-blue-500"
             >
-              + 발신자 추가
+              + Add Sender
             </button>
           </div>
         </section>

@@ -41,7 +41,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
     set({ currentIndex: index, explanation: null, showExplanation: false }),
   goNext: () => {
     const { currentIndex, currentNewsletter } = get();
-    if (currentNewsletter && currentIndex < currentNewsletter.paragraphs.length - 1) {
+    if (currentNewsletter && currentIndex < currentNewsletter.paragraphs.length) {
       set({ currentIndex: currentIndex + 1, explanation: null, showExplanation: false });
     }
   },

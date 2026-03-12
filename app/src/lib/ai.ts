@@ -27,13 +27,13 @@ export async function getExplanation(
   settings: AISettings
 ): Promise<string> {
   if (!settings.apiKey) {
-    return "API 키가 설정되지 않았습니다. 설정에서 API 키를 입력해주세요.";
+    return "API key is not set. Please enter your API key in Settings.";
   }
 
   const systemPrompt = `You are a helpful assistant that explains English newsletter paragraphs.
 Explain the following paragraph in ${getLanguageName(settings.language)}.
 - Use simple, easy-to-understand language
-- 친근한 반말 사용
+- Use a friendly, casual tone
 - Explain technical terms in parentheses
 - Focus on the key meaning and context`;
 
@@ -67,7 +67,7 @@ async function callGemini(
   }
 
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "해설을 생성할 수 없습니다.";
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "Failed to generate explanation.";
 }
 
 async function callClaude(
@@ -97,17 +97,17 @@ async function callClaude(
   }
 
   const data = await res.json();
-  return data.content?.[0]?.text ?? "해설을 생성할 수 없습니다.";
+  return data.content?.[0]?.text ?? "Failed to generate explanation.";
 }
 
 function getLanguageName(code: string): string {
   const map: Record<string, string> = {
-    ko: "Korean (한국어)",
-    ja: "Japanese (日本語)",
-    zh: "Chinese (中文)",
-    es: "Spanish (Español)",
-    fr: "French (Français)",
-    de: "German (Deutsch)",
+    ko: "Korean",
+    ja: "Japanese",
+    zh: "Chinese",
+    es: "Spanish",
+    fr: "French",
+    de: "German",
   };
-  return map[code] ?? "Korean (한국어)";
+  return map[code] ?? "Korean";
 }

@@ -11,7 +11,7 @@ const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 export function startOAuth() {
   const settings = getSettings();
   if (!settings.googleClientId) {
-    throw new Error("Google Client ID가 설정되지 않았습니다. 설정에서 입력해주세요.");
+    throw new Error("Google Client ID is not set. Please enter it in Settings.");
   }
 
   const redirectUri = window.location.origin + "/";
@@ -53,7 +53,7 @@ export function logout() {
 
 async function gmailFetch(path: string): Promise<Response> {
   const token = getOAuthToken();
-  if (!token) throw new Error("로그인이 필요합니다.");
+  if (!token) throw new Error("Login required.");
 
   const res = await fetch(`${GMAIL_API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -61,7 +61,7 @@ async function gmailFetch(path: string): Promise<Response> {
 
   if (res.status === 401) {
     clearOAuthToken();
-    throw new Error("토큰이 만료되었습니다. 다시 로그인해주세요.");
+    throw new Error("Token expired. Please log in again.");
   }
 
   if (!res.ok) {
@@ -76,7 +76,7 @@ export async function fetchNewsletters(): Promise<Newsletter[]> {
   const whitelist = settings.senderWhitelist.filter((s) => s.trim());
 
   if (whitelist.length === 0) {
-    throw new Error("발신자 화이트리스트가 비어있습니다. 설정에서 추가해주세요.");
+    throw new Error("Sender whitelist is empty. Please add senders in Settings.");
   }
 
   // Build Gmail search query: from sender whitelist, unread

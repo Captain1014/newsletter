@@ -11,6 +11,7 @@ let animationFrameId: number | null = null;
 interface SpeakOptions {
   rate?: number;
   lang?: string;
+  onStart?: () => void;
   onBoundary?: BoundaryCallback;
   onEnd?: EndCallback;
   ttsSettings?: TTSSettings;
@@ -39,7 +40,7 @@ export function speak(text: string, options: SpeakOptions = {}) {
 async function speakGemini(text: string, apiKey: string, voice: string, options: SpeakOptions) {
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,41 +77,36 @@ async function speakGemini(text: string, apiKey: string, voice: string, options:
     }
 
     const { mimeType, data: audioBase64 } = audioPart.inlineData;
-    const audioSrc = `data:${mimeType};base64,${audioBase64}`;
+
+    let audioSrc: string;
+    if (mimeType.startsWith("audio/L16") || mimeType.startsWith("audio/pcm")) {
+      // Raw PCM — wrap in WAV container so the browser can play it
+      const raw = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+      const sampleRate = 24000; // Gemini TTS default
+      const wav = pcmToWav(raw, sampleRate);
+      const blob = new Blob([wav], { type: "audio/wav" });
+      audioSrc = URL.createObjectURL(blob);
+    } else {
+      audioSrc = `data:${mimeType};base64,${audioBase64}`;
+    }
+
     const audio = new Audio(audioSrc);
     audio.playbackRate = options.rate ?? 1.0;
     currentAudio = audio;
 
-    const words = buildWordMap(text);
-
-    audio.onloadedmetadata = () => {
-      const duration = audio.duration;
-      if (!duration || !options.onBoundary) {
-        audio.play();
-        return;
-      }
-
-      const trackProgress = () => {
-        if (!currentAudio || currentAudio.paused || currentAudio.ended) return;
-        const progress = audio.currentTime / duration;
-        const charPos = Math.floor(progress * text.length);
-        const word = words.find((w) => charPos >= w.start && charPos < w.start + w.length);
-        if (word) options.onBoundary!(word.start, word.length);
-        animationFrameId = requestAnimationFrame(trackProgress);
-      };
-
+    audio.oncanplaythrough = () => {
+      options.onStart?.();
       audio.play();
-      animationFrameId = requestAnimationFrame(trackProgress);
     };
 
     audio.onended = () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (audioSrc.startsWith("blob:")) URL.revokeObjectURL(audioSrc);
       currentAudio = null;
       options.onEnd?.();
     };
 
     audio.onerror = () => {
-      console.error("Gemini audio playback error, falling back to browser TTS");
+      if (audioSrc.startsWith("blob:")) URL.revokeObjectURL(audioSrc);
       currentAudio = null;
       speakBrowser(text, options);
     };
@@ -121,7 +117,8 @@ async function speakGemini(text: string, apiKey: string, voice: string, options:
 
 // --- Google Cloud TTS ---
 async function speakGoogleCloud(text: string, options: SpeakOptions) {
-  const tts = options.ttsSettings!;
+  const tts = options.ttsSettings;
+  if (!tts?.apiKey) { speakBrowser(text, options); return; }
   try {
     const res = await fetch(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${tts.apiKey}`,
@@ -161,6 +158,7 @@ async function speakGoogleCloud(text: string, options: SpeakOptions) {
     const words = buildWordMap(text);
 
     audio.onloadedmetadata = () => {
+      options.onStart?.();
       const duration = audio.duration;
       if (!duration || !options.onBoundary) {
         audio.play();
@@ -205,6 +203,31 @@ async function speakGoogleCloud(text: string, options: SpeakOptions) {
   }
 }
 
+/** Convert raw PCM (16-bit LE mono) to a WAV ArrayBuffer */
+function pcmToWav(pcm: Uint8Array, sampleRate: number): ArrayBuffer {
+  const header = 44;
+  const buf = new ArrayBuffer(header + pcm.length);
+  const view = new DataView(buf);
+  const writeStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + pcm.length, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true); // chunk size
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true); // byte rate
+  view.setUint16(32, 2, true); // block align
+  view.setUint16(34, 16, true); // bits per sample
+  writeStr(36, "data");
+  view.setUint32(40, pcm.length, true);
+  new Uint8Array(buf, header).set(pcm);
+  return buf;
+}
+
 function buildWordMap(text: string): { start: number; length: number }[] {
   const words: { start: number; length: number }[] = [];
   const regex = /\S+/g;
@@ -233,6 +256,7 @@ function speakBrowser(text: string, options: SpeakOptions) {
     utterance.onend = options.onEnd;
   }
 
+  utterance.onstart = () => options.onStart?.();
   currentUtterance = utterance;
   speechSynthesis.speak(utterance);
 }

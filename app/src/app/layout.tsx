@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Newsletter Reader",
-  description: "출퇴근 영어 뉴스레터 TTS 리더",
+  description: "English newsletter TTS reader for your commute",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
