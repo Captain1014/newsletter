@@ -14,7 +14,8 @@ export function startOAuth() {
     throw new Error("Google Client ID is not set. Please enter it in Settings.");
   }
 
-  const redirectUri = window.location.origin + "/";
+  const basePath = window.location.pathname.replace(/\/+$/, "").split("/").slice(0, 2).join("/");
+  const redirectUri = window.location.origin + basePath + "/";
   const params = new URLSearchParams({
     client_id: settings.googleClientId,
     redirect_uri: redirectUri,
