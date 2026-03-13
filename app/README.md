@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 출퇴근 뉴스레터 리더
+
+A mobile-first PWA for listening to English newsletters on your commute. Connects to Gmail, splits content into paragraph cards, reads them aloud with TTS, and offers AI-powered explanations — all free to run.
+
+## Features
+
+- **Gmail integration** — OAuth login, auto-detects newsletters from a sender whitelist
+- **Paragraph card reader** — one paragraph at a time, swipe left/right to navigate
+- **TTS playback** — browser built-in, Gemini TTS, or Google Cloud TTS with word highlight sync
+- **AI Explain** — tap to get an AI explanation of the current paragraph in your language
+- **Podcast mode** — converts the full newsletter into a spoken podcast script
+- **User profile personalization** — set your background in Settings so AI explanations and podcast scripts are tailored to you
+- **Dark mode** — system, light, or dark
+- **PWA** — add to home screen, runs like a native app
+
+## Tech Stack
+
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| TTS | Web Speech API / Gemini TTS / Google Cloud TTS |
+| AI | Google Gemini or Anthropic Claude (bring your own API key) |
+| Gmail | Gmail API + Google OAuth |
+| Storage | localStorage / IndexedDB |
+| Deploy | Vercel (free) |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+cd app
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Settings
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Go to **Settings** to configure:
 
-## Learn More
+| Setting | Notes |
+|---|---|
+| AI Provider | Gemini (free tier) or Claude |
+| API Key | Your Gemini or Claude API key |
+| About Me | Describe your background — AI will tailor explanations to you |
+| Explanation Language | Korean, Japanese, Chinese, Spanish, French, German |
+| Voice Engine | Gemini TTS (shares AI key), Google Cloud TTS, or Browser built-in |
+| TTS Speed | 0.5x – 2.0x |
+| Google OAuth Client ID | For Gmail integration |
+| Sender Whitelist | Email addresses to pull newsletters from |
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Push to GitHub and connect to [Vercel](https://vercel.com). No environment variables needed — all keys are stored client-side in localStorage.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Cost
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**$0** for personal use — Gemini free tier covers AI explanations and TTS, Vercel free tier covers hosting.
