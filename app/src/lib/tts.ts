@@ -315,6 +315,9 @@ export function isPaused(): boolean {
 
 // --- Podcast mode (sequential TTS) ---
 let podcastCancelled = false;
+let podcastSegments: string[] = [];
+let podcastIndex = 0;
+let podcastResolve: (() => void) | null = null;
 
 export interface PodcastCallbacks {
   onSegmentStart?: (index: number) => void;
@@ -329,19 +332,22 @@ export async function speakPodcast(
   callbacks: PodcastCallbacks
 ) {
   podcastCancelled = false;
+  podcastSegments = segments;
 
-  for (let i = 0; i < segments.length; i++) {
+  for (podcastIndex = 0; podcastIndex < segments.length; podcastIndex++) {
     if (podcastCancelled) break;
 
-    callbacks.onSegmentStart?.(i);
+    callbacks.onSegmentStart?.(podcastIndex);
 
     await new Promise<void>((resolve) => {
-      speak(segments[i], {
+      podcastResolve = resolve;
+      speak(segments[podcastIndex], {
         ...options,
         onStart: undefined,
         onBoundary: undefined,
         onEnd: () => {
-          callbacks.onSegmentEnd?.(i);
+          callbacks.onSegmentEnd?.(podcastIndex);
+          podcastResolve = null;
           resolve();
         },
       });
@@ -355,8 +361,25 @@ export async function speakPodcast(
   }
 }
 
+export function podcastSkip(delta: number) {
+  const newIndex = Math.max(0, Math.min(podcastIndex + delta, podcastSegments.length - 1));
+  if (newIndex === podcastIndex) return;
+
+  // Stop current segment, jump to new index
+  podcastIndex = newIndex - 1; // will be incremented by loop
+  stop();
+  if (podcastResolve) {
+    podcastResolve();
+    podcastResolve = null;
+  }
+}
+
 export function stopPodcast() {
   podcastCancelled = true;
+  if (podcastResolve) {
+    podcastResolve();
+    podcastResolve = null;
+  }
   stop();
 }
 
