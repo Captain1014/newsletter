@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const basePath = process.env.NODE_ENV === "production" ? "/newsletter" : "";
+
 export const metadata: Metadata = {
   title: "Newsletter Reader",
   description: "English newsletter TTS reader for your commute",
-  manifest: "/manifest.json",
+  manifest: `${basePath}/manifest.json`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -28,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href={`${basePath}/icons/icon-192.png`} />
       </head>
       <body
         className="font-sans antialiased bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100"
