@@ -135,9 +135,11 @@ export default function PodcastPlayer() {
 
           {/* Current segment text */}
           {podcastCurrentSegment >= 0 && podcastSegments[podcastCurrentSegment] && (
-            <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed line-clamp-3">
-              {podcastSegments[podcastCurrentSegment]}
-            </p>
+            <div className="max-h-[40vh] overflow-y-auto">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                {podcastSegments[podcastCurrentSegment]}
+              </p>
+            </div>
           )}
         </>
       )}
