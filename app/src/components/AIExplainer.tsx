@@ -56,7 +56,12 @@ export default function AIExplainer({ paragraph }: { paragraph: string }) {
       </button>
 
       {showExplanation && explanation && (
-        <div className="mt-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 text-sm leading-6">
+        <div
+          className="mt-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 text-sm leading-6"
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
           {explanation}
         </div>
       )}

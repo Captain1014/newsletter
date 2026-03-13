@@ -19,6 +19,7 @@ export interface AISettings {
   apiKey: string;
   language: string;
   model: string;
+  userProfile: string;
 }
 
 export interface TTSSettings {
@@ -42,6 +43,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     apiKey: "",
     language: "ko",
     model: "gemini-2.5-flash",
+    userProfile: "",
   },
   tts: {
     provider: "gemini",

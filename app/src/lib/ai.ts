@@ -30,12 +30,16 @@ export async function getExplanation(
     return "API key is not set. Please enter your API key in Settings.";
   }
 
+  const profileLine = settings.userProfile?.trim()
+    ? `\nThe reader's background: ${settings.userProfile.trim()}\nTailor your explanation to their background — skip what they already know, use analogies from their world.`
+    : "";
+
   const systemPrompt = `You are a helpful assistant that explains English newsletter paragraphs.
 Explain the following paragraph in ${getLanguageName(settings.language)}.
 - Use simple, easy-to-understand language
 - Use a friendly, casual tone
 - Explain technical terms in parentheses
-- Focus on the key meaning and context`;
+- Focus on the key meaning and context${profileLine}`;
 
   if (settings.provider === "gemini") {
     return callGemini(paragraph, systemPrompt, settings);
@@ -110,6 +114,10 @@ export async function generatePodcastScript(
 
   const fullText = paragraphs.join("\n\n");
 
+  const profileLine = settings.userProfile?.trim()
+    ? `\n- The listener's background: ${settings.userProfile.trim()}. Tailor examples and analogies to their world. Skip explaining things they already know.`
+    : "";
+
   const systemPrompt = `You are a podcast host who makes tech newsletters easy to understand for non-experts.
 Your job is to EXPLAIN the newsletter — not just rephrase it.
 
@@ -122,7 +130,7 @@ Rules:
 - Do NOT add intro/outro greetings — jump straight into the content
 - Each section should be 3-5 sentences for good audio pacing
 - Separate each section with "---" on its own line
-- Write in a warm, clear tone — like explaining the news to a smart friend who isn't in tech`;
+- Write in a warm, clear tone — like explaining the news to a smart friend who isn't in tech${profileLine}`;
 
   let result: string;
   if (settings.provider === "gemini") {

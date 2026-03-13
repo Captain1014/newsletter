@@ -96,6 +96,21 @@ export default function SettingsPage() {
               />
             </div>
 
+            {/* User Profile */}
+            <div>
+              <label className="text-sm mb-1 block">About Me</label>
+              <textarea
+                value={settings.ai.userProfile ?? ""}
+                onChange={(e) => updateAI({ userProfile: e.target.value })}
+                placeholder="e.g. I'm a Korean software engineer. I know tech well but not finance. Use coding analogies when possible."
+                rows={3}
+                className="w-full p-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm resize-none"
+              />
+              <p className="text-xs text-zinc-400 mt-1">
+                AI will tailor explanations and podcast scripts to your background.
+              </p>
+            </div>
+
             {/* Language */}
             <div>
               <label className="text-sm mb-1 block">Explanation Language</label>
