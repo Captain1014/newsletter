@@ -25,7 +25,10 @@ export function speak(text: string, options: SpeakOptions = {}) {
     const settings = getSettings();
     const apiKey = tts.apiKey || settings.ai.apiKey;
     if (apiKey) {
-      speakGemini(text, apiKey, tts.voice || "Kore", options);
+      // Create & prime audio element during user gesture (required for iOS)
+      const audio = new Audio();
+      audio.play().then(() => audio.pause()).catch(() => {});
+      speakGemini(text, apiKey, tts.voice || "Kore", options, audio);
     } else {
       speakBrowser(text, options);
     }
@@ -37,7 +40,7 @@ export function speak(text: string, options: SpeakOptions = {}) {
 }
 
 // --- Gemini TTS ---
-async function speakGemini(text: string, apiKey: string, voice: string, options: SpeakOptions) {
+async function speakGemini(text: string, apiKey: string, voice: string, options: SpeakOptions, audio: HTMLAudioElement) {
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
@@ -80,9 +83,8 @@ async function speakGemini(text: string, apiKey: string, voice: string, options:
 
     let audioSrc: string;
     if (mimeType.startsWith("audio/L16") || mimeType.startsWith("audio/pcm")) {
-      // Raw PCM — wrap in WAV container so the browser can play it
       const raw = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
-      const sampleRate = 24000; // Gemini TTS default
+      const sampleRate = 24000;
       const wav = pcmToWav(raw, sampleRate);
       const blob = new Blob([wav], { type: "audio/wav" });
       audioSrc = URL.createObjectURL(blob);
@@ -90,13 +92,19 @@ async function speakGemini(text: string, apiKey: string, voice: string, options:
       audioSrc = `data:${mimeType};base64,${audioBase64}`;
     }
 
-    const audio = new Audio(audioSrc);
+    // Reuse the pre-primed audio element (iOS requires user-gesture-initiated audio)
+    audio.src = audioSrc;
     audio.playbackRate = options.rate ?? 1.0;
     currentAudio = audio;
 
     audio.oncanplaythrough = () => {
       options.onStart?.();
-      audio.play();
+      audio.play().catch(() => {
+        // If play still fails, fall back to browser TTS
+        if (audioSrc.startsWith("blob:")) URL.revokeObjectURL(audioSrc);
+        currentAudio = null;
+        speakBrowser(text, options);
+      });
     };
 
     audio.onended = () => {
@@ -252,11 +260,14 @@ function speakBrowser(text: string, options: SpeakOptions) {
     };
   }
 
-  if (options.onEnd) {
-    utterance.onend = options.onEnd;
-  }
-
+  utterance.onend = () => options.onEnd?.();
   utterance.onstart = () => options.onStart?.();
+  utterance.onerror = () => {
+    // Ensure loading state is cleared even if browser TTS fails
+    options.onStart?.();
+    options.onEnd?.();
+  };
+
   currentUtterance = utterance;
   speechSynthesis.speak(utterance);
 }
