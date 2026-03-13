@@ -110,15 +110,19 @@ export async function generatePodcastScript(
 
   const fullText = paragraphs.join("\n\n");
 
-  const systemPrompt = `You are a friendly podcast host explaining a newsletter to your listener.
-Rewrite the following newsletter as a podcast script in English.
-- Speak as if talking to a friend — natural, conversational, easy to follow
-- Break down complex ideas into simple explanations
-- Add brief transitions between topics (e.g., "Now, here's the interesting part...")
-- Keep the same information but make it much easier to understand by ear
+  const systemPrompt = `You are a podcast host who makes tech newsletters easy to understand for non-experts.
+Your job is to EXPLAIN the newsletter — not just rephrase it.
+
+Rules:
+- For every topic: first explain WHAT happened, then WHY it matters to the listener
+- Replace jargon with plain words. If a technical term is unavoidable, immediately explain it (e.g., "LLM — that's basically an AI that generates text")
+- Use short, spoken-style sentences. Avoid complex sentence structures
+- Add real-world analogies to make abstract concepts click (e.g., "Think of it like...")
+- Skip filler content, ads, and self-promotion from the original newsletter
 - Do NOT add intro/outro greetings — jump straight into the content
+- Each section should be 3-5 sentences for good audio pacing
 - Separate each section with "---" on its own line
-- Each section should be 2-4 sentences, good for audio pacing`;
+- Write in a warm, clear tone — like explaining the news to a smart friend who isn't in tech`;
 
   let result: string;
   if (settings.provider === "gemini") {

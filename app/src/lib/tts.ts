@@ -41,68 +41,97 @@ export function speak(text: string, options: SpeakOptions = {}) {
 }
 
 // --- Gemini TTS ---
+
+// Prefetch cache: key = text, value = blob URL
+const audioCache = new Map<string, string>();
+
+/** Fetch Gemini TTS audio and return a blob URL (or null on failure) */
+async function fetchGeminiAudio(
+  text: string,
+  apiKey: string,
+  voice: string,
+  signal?: AbortSignal
+): Promise<string | null> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `Read this aloud naturally:\n\n${text}` }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: voice },
+            },
+          },
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Gemini TTS error:", await res.text());
+    return null;
+  }
+
+  const data = await res.json();
+  const audioPart = data.candidates?.[0]?.content?.parts?.find(
+    (p: { inlineData?: { mimeType: string; data: string } }) => p.inlineData
+  );
+
+  if (!audioPart?.inlineData) return null;
+
+  const { mimeType, data: audioBase64 } = audioPart.inlineData;
+
+  if (mimeType.startsWith("audio/L16") || mimeType.startsWith("audio/pcm")) {
+    const raw = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+    const wav = pcmToWav(raw, 24000);
+    const blob = new Blob([wav], { type: "audio/wav" });
+    return URL.createObjectURL(blob);
+  }
+  return `data:${mimeType};base64,${audioBase64}`;
+}
+
+/** Prefetch audio for a text segment (no-op if already cached) */
+export function prefetchGeminiTTS(text: string, apiKey: string, voice: string) {
+  if (audioCache.has(text)) return;
+  fetchGeminiAudio(text, apiKey, voice)
+    .then((src) => { if (src) audioCache.set(text, src); })
+    .catch(() => {});
+}
+
+function clearAudioCache() {
+  for (const src of audioCache.values()) {
+    if (src.startsWith("blob:")) URL.revokeObjectURL(src);
+  }
+  audioCache.clear();
+}
+
 async function speakGemini(text: string, apiKey: string, voice: string, options: SpeakOptions, audio: HTMLAudioElement) {
   try {
-    // Abort any previous in-flight fetch
     currentAbort?.abort();
     const abort = new AbortController();
     currentAbort = abort;
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: abort.signal,
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `Read this aloud naturally:\n\n${text}` }] }],
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: voice },
-              },
-            },
-          },
-        }),
-      }
-    );
+    // Use cached audio if available, otherwise fetch
+    let audioSrc: string | null = audioCache.get(text) ?? null;
+    if (!audioSrc) {
+      audioSrc = await fetchGeminiAudio(text, apiKey, voice, abort.signal);
+    }
 
-    // If aborted after fetch completed, bail out
     if (abort.signal.aborted) return;
 
-    if (!res.ok) {
-      const err = await res.text();
-      console.error("Gemini TTS error:", err);
+    if (!audioSrc) {
       speakBrowser(text, options);
       return;
     }
 
-    const data = await res.json();
-    const audioPart = data.candidates?.[0]?.content?.parts?.find(
-      (p: { inlineData?: { mimeType: string; data: string } }) => p.inlineData
-    );
+    // Remove from cache since we're using it now
+    audioCache.delete(text);
 
-    if (!audioPart?.inlineData) {
-      console.error("Gemini TTS: no audio in response");
-      speakBrowser(text, options);
-      return;
-    }
-
-    const { mimeType, data: audioBase64 } = audioPart.inlineData;
-
-    let audioSrc: string;
-    if (mimeType.startsWith("audio/L16") || mimeType.startsWith("audio/pcm")) {
-      const raw = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
-      const sampleRate = 24000;
-      const wav = pcmToWav(raw, sampleRate);
-      const blob = new Blob([wav], { type: "audio/wav" });
-      audioSrc = URL.createObjectURL(blob);
-    } else {
-      audioSrc = `data:${mimeType};base64,${audioBase64}`;
-    }
-
-    // Reuse the pre-primed audio element (iOS requires user-gesture-initiated audio)
     audio.src = audioSrc;
     audio.playbackRate = options.rate ?? 1.0;
     currentAudio = audio;
@@ -110,26 +139,24 @@ async function speakGemini(text: string, apiKey: string, voice: string, options:
     audio.oncanplaythrough = () => {
       options.onStart?.();
       audio.play().catch(() => {
-        // If play still fails, fall back to browser TTS
-        if (audioSrc.startsWith("blob:")) URL.revokeObjectURL(audioSrc);
+        if (audioSrc!.startsWith("blob:")) URL.revokeObjectURL(audioSrc!);
         currentAudio = null;
         speakBrowser(text, options);
       });
     };
 
     audio.onended = () => {
-      if (audioSrc.startsWith("blob:")) URL.revokeObjectURL(audioSrc);
+      if (audioSrc!.startsWith("blob:")) URL.revokeObjectURL(audioSrc!);
       currentAudio = null;
       options.onEnd?.();
     };
 
     audio.onerror = () => {
-      if (audioSrc.startsWith("blob:")) URL.revokeObjectURL(audioSrc);
+      if (audioSrc!.startsWith("blob:")) URL.revokeObjectURL(audioSrc!);
       currentAudio = null;
       speakBrowser(text, options);
     };
   } catch (e) {
-    // Don't fallback if aborted intentionally
     if (e instanceof DOMException && e.name === "AbortError") return;
     speakBrowser(text, options);
   }
@@ -352,8 +379,24 @@ export async function speakPodcast(
   podcastCancelled = false;
   podcastSegments = segments;
 
+  // Extract Gemini settings for prefetching
+  const tts = options.ttsSettings;
+  const settings = getSettings();
+  const apiKey = tts?.provider === "gemini" ? (tts.apiKey || settings.ai.apiKey) : "";
+  const voice = tts?.voice || "Kore";
+
+  // Prefetch the first segment immediately
+  if (apiKey && segments.length > 0) {
+    prefetchGeminiTTS(segments[0], apiKey, voice);
+  }
+
   for (podcastIndex = 0; podcastIndex < segments.length; podcastIndex++) {
     if (podcastCancelled) break;
+
+    // Prefetch next segment while current one plays
+    if (apiKey && podcastIndex + 1 < segments.length) {
+      prefetchGeminiTTS(segments[podcastIndex + 1], apiKey, voice);
+    }
 
     callbacks.onSegmentStart?.(podcastIndex);
 
@@ -400,6 +443,7 @@ export function stopPodcast() {
   podcastSkipping = true;
   stop();
   podcastSkipping = false;
+  clearAudioCache();
   const r = podcastResolve;
   podcastResolve = null;
   r?.();
