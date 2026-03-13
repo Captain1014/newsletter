@@ -7,6 +7,8 @@ import {
   speakPodcast,
   stopPodcast,
   podcastSkip,
+  pause,
+  resume,
   requestWakeLock,
   releaseWakeLock,
 } from "@/lib/tts";
@@ -19,10 +21,12 @@ export default function PodcastPlayer() {
     podcastSegments,
     podcastCurrentSegment,
     podcastLoading,
+    podcastPaused,
     setIsPodcastMode,
     setPodcastSegments,
     setPodcastCurrentSegment,
     setPodcastLoading,
+    setPodcastPaused,
     resetPodcast,
   } = useReaderStore();
 
@@ -57,7 +61,10 @@ export default function PodcastPlayer() {
           ttsSettings: settings.tts,
         },
         {
-          onSegmentStart: (i) => setPodcastCurrentSegment(i),
+          onSegmentStart: (i) => {
+            setPodcastCurrentSegment(i);
+            setPodcastPaused(false);
+          },
           onComplete: () => {
             releaseWakeLock();
             resetPodcast();
@@ -71,17 +78,29 @@ export default function PodcastPlayer() {
     }
   }
 
-  function handleStop() {
+  function handleClose() {
     stopPodcast();
     releaseWakeLock();
     resetPodcast();
   }
 
+  function handlePauseResume() {
+    if (podcastPaused) {
+      resume();
+      setPodcastPaused(false);
+    } else {
+      pause();
+      setPodcastPaused(true);
+    }
+  }
+
   function handleSkipBack() {
+    setPodcastPaused(false);
     podcastSkip(-1);
   }
 
   function handleSkipForward() {
+    setPodcastPaused(false);
     podcastSkip(1);
   }
 
@@ -92,7 +111,10 @@ export default function PodcastPlayer() {
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const targetIndex = Math.floor(ratio * podcastSegments.length);
     const delta = targetIndex - podcastCurrentSegment;
-    if (delta !== 0) podcastSkip(delta);
+    if (delta !== 0) {
+      setPodcastPaused(false);
+      podcastSkip(delta);
+    }
   }
 
   // Not in podcast mode — show start button
@@ -118,7 +140,6 @@ export default function PodcastPlayer() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Card container */}
       <div className="flex flex-col gap-3 p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 flex-1 min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between shrink-0">
@@ -128,15 +149,25 @@ export default function PodcastPlayer() {
               <path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V23h2v-2.06A9 9 0 0 0 21 12v-2h-2Z" />
             </svg>
             <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
-              Podcast Mode
+              Podcast
+            </span>
+            <span className="text-xs text-purple-500 dark:text-purple-400">
+              {current} / {total}
             </span>
           </div>
-          <span className="text-xs text-purple-500 dark:text-purple-400">
-            {current} / {total}
-          </span>
+          {/* Close button */}
+          <button
+            onClick={handleClose}
+            className="p-2 rounded-full hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Close podcast"
+          >
+            <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        {/* Status */}
+        {/* Content */}
         {podcastLoading ? (
           <div className="flex items-center justify-center gap-2 text-sm text-purple-600 dark:text-purple-400 flex-1">
             <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -158,7 +189,6 @@ export default function PodcastPlayer() {
                 className="h-full bg-purple-500 transition-all duration-300 rounded-full relative"
                 style={{ width: `${progress}%` }}
               >
-                {/* Thumb */}
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-purple-500 rounded-full border-2 border-white dark:border-zinc-900 shadow" />
               </div>
             </div>
@@ -174,7 +204,7 @@ export default function PodcastPlayer() {
               )}
             </div>
 
-            {/* Controls — fixed at bottom */}
+            {/* Controls */}
             <div className="flex items-center justify-center gap-4 shrink-0 pt-1">
               {/* Skip back */}
               <button
@@ -188,15 +218,22 @@ export default function PodcastPlayer() {
                 </svg>
               </button>
 
-              {/* Stop */}
+              {/* Pause / Resume */}
               <button
-                onClick={handleStop}
+                onClick={handlePauseResume}
                 className="p-4 rounded-full bg-purple-500 text-white hover:bg-purple-600 active:bg-purple-700 transition-colors min-w-[56px] min-h-[56px] flex items-center justify-center shadow-lg"
-                aria-label="Stop podcast"
+                aria-label={podcastPaused ? "Resume" : "Pause"}
               >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <rect x="6" y="6" width="12" height="12" rx="1" />
-                </svg>
+                {podcastPaused ? (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                  </svg>
+                )}
               </button>
 
               {/* Skip forward */}

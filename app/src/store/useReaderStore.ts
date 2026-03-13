@@ -33,10 +33,12 @@ interface ReaderState {
   podcastSegments: string[];
   podcastCurrentSegment: number;
   podcastLoading: boolean;
+  podcastPaused: boolean;
   setIsPodcastMode: (mode: boolean) => void;
   setPodcastSegments: (segments: string[]) => void;
   setPodcastCurrentSegment: (index: number) => void;
   setPodcastLoading: (loading: boolean) => void;
+  setPodcastPaused: (paused: boolean) => void;
   resetPodcast: () => void;
 }
 
@@ -79,15 +81,18 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   podcastSegments: [],
   podcastCurrentSegment: -1,
   podcastLoading: false,
+  podcastPaused: false,
   setIsPodcastMode: (mode) => set({ isPodcastMode: mode }),
   setPodcastSegments: (segments) => set({ podcastSegments: segments }),
   setPodcastCurrentSegment: (index) => set({ podcastCurrentSegment: index }),
   setPodcastLoading: (loading) => set({ podcastLoading: loading }),
+  setPodcastPaused: (paused) => set({ podcastPaused: paused }),
   resetPodcast: () =>
     set({
       isPodcastMode: false,
       podcastSegments: [],
       podcastCurrentSegment: -1,
       podcastLoading: false,
+      podcastPaused: false,
     }),
 }));
