@@ -7,6 +7,7 @@ type EndCallback = () => void;
 let currentUtterance: SpeechSynthesisUtterance | null = null;
 let currentAudio: HTMLAudioElement | null = null;
 let animationFrameId: number | null = null;
+let currentAbort: AbortController | null = null;
 
 interface SpeakOptions {
   rate?: number;
@@ -42,11 +43,17 @@ export function speak(text: string, options: SpeakOptions = {}) {
 // --- Gemini TTS ---
 async function speakGemini(text: string, apiKey: string, voice: string, options: SpeakOptions, audio: HTMLAudioElement) {
   try {
+    // Abort any previous in-flight fetch
+    currentAbort?.abort();
+    const abort = new AbortController();
+    currentAbort = abort;
+
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: abort.signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: `Read this aloud naturally:\n\n${text}` }] }],
           generationConfig: {
@@ -60,6 +67,9 @@ async function speakGemini(text: string, apiKey: string, voice: string, options:
         }),
       }
     );
+
+    // If aborted after fetch completed, bail out
+    if (abort.signal.aborted) return;
 
     if (!res.ok) {
       const err = await res.text();
@@ -118,7 +128,9 @@ async function speakGemini(text: string, apiKey: string, voice: string, options:
       currentAudio = null;
       speakBrowser(text, options);
     };
-  } catch {
+  } catch (e) {
+    // Don't fallback if aborted intentionally
+    if (e instanceof DOMException && e.name === "AbortError") return;
     speakBrowser(text, options);
   }
 }
@@ -273,7 +285,12 @@ function speakBrowser(text: string, options: SpeakOptions) {
 }
 
 export function stop() {
-  // Stop Google Cloud audio
+  // Abort any in-flight Gemini fetch
+  if (currentAbort) {
+    currentAbort.abort();
+    currentAbort = null;
+  }
+  // Stop audio
   if (currentAudio) {
     currentAudio.pause();
     currentAudio = null;
