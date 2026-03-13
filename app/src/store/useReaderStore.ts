@@ -27,6 +27,17 @@ interface ReaderState {
   setExplanation: (text: string | null) => void;
   setIsLoadingExplanation: (loading: boolean) => void;
   setShowExplanation: (show: boolean) => void;
+
+  // Podcast mode
+  isPodcastMode: boolean;
+  podcastSegments: string[];
+  podcastCurrentSegment: number;
+  podcastLoading: boolean;
+  setIsPodcastMode: (mode: boolean) => void;
+  setPodcastSegments: (segments: string[]) => void;
+  setPodcastCurrentSegment: (index: number) => void;
+  setPodcastLoading: (loading: boolean) => void;
+  resetPodcast: () => void;
 }
 
 export const useReaderStore = create<ReaderState>((set, get) => ({
@@ -63,4 +74,20 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   setExplanation: (text) => set({ explanation: text }),
   setIsLoadingExplanation: (loading) => set({ isLoadingExplanation: loading }),
   setShowExplanation: (show) => set({ showExplanation: show }),
+
+  isPodcastMode: false,
+  podcastSegments: [],
+  podcastCurrentSegment: -1,
+  podcastLoading: false,
+  setIsPodcastMode: (mode) => set({ isPodcastMode: mode }),
+  setPodcastSegments: (segments) => set({ podcastSegments: segments }),
+  setPodcastCurrentSegment: (index) => set({ podcastCurrentSegment: index }),
+  setPodcastLoading: (loading) => set({ podcastLoading: loading }),
+  resetPodcast: () =>
+    set({
+      isPodcastMode: false,
+      podcastSegments: [],
+      podcastCurrentSegment: -1,
+      podcastLoading: false,
+    }),
 }));

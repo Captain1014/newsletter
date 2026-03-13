@@ -100,6 +100,40 @@ async function callClaude(
   return data.content?.[0]?.text ?? "Failed to generate explanation.";
 }
 
+export async function generatePodcastScript(
+  paragraphs: string[],
+  settings: AISettings
+): Promise<string[]> {
+  if (!settings.apiKey) {
+    throw new Error("API key is required. Please set it in Settings.");
+  }
+
+  const fullText = paragraphs.join("\n\n");
+
+  const systemPrompt = `You are a friendly podcast host explaining a newsletter to your listener.
+Rewrite the following newsletter as a podcast script in English.
+- Speak as if talking to a friend — natural, conversational, easy to follow
+- Break down complex ideas into simple explanations
+- Add brief transitions between topics (e.g., "Now, here's the interesting part...")
+- Keep the same information but make it much easier to understand by ear
+- Do NOT add intro/outro greetings — jump straight into the content
+- Separate each section with "---" on its own line
+- Each section should be 2-4 sentences, good for audio pacing`;
+
+  let result: string;
+  if (settings.provider === "gemini") {
+    result = await callGemini(fullText, systemPrompt, { ...settings, model: settings.model || "gemini-2.5-flash" });
+  } else {
+    result = await callClaude(fullText, systemPrompt, settings);
+  }
+
+  // Split by --- separator, filter empty
+  return result
+    .split(/\n---\n/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
 function getLanguageName(code: string): string {
   const map: Record<string, string> = {
     ko: "Korean",

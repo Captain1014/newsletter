@@ -313,6 +313,53 @@ export function isPaused(): boolean {
   return speechSynthesis.paused;
 }
 
+// --- Podcast mode (sequential TTS) ---
+let podcastCancelled = false;
+
+export interface PodcastCallbacks {
+  onSegmentStart?: (index: number) => void;
+  onSegmentEnd?: (index: number) => void;
+  onComplete?: () => void;
+  onError?: (error: string) => void;
+}
+
+export async function speakPodcast(
+  segments: string[],
+  options: SpeakOptions,
+  callbacks: PodcastCallbacks
+) {
+  podcastCancelled = false;
+
+  for (let i = 0; i < segments.length; i++) {
+    if (podcastCancelled) break;
+
+    callbacks.onSegmentStart?.(i);
+
+    await new Promise<void>((resolve) => {
+      speak(segments[i], {
+        ...options,
+        onStart: undefined,
+        onBoundary: undefined,
+        onEnd: () => {
+          callbacks.onSegmentEnd?.(i);
+          resolve();
+        },
+      });
+    });
+
+    if (podcastCancelled) break;
+  }
+
+  if (!podcastCancelled) {
+    callbacks.onComplete?.();
+  }
+}
+
+export function stopPodcast() {
+  podcastCancelled = true;
+  stop();
+}
+
 // Wake Lock to prevent screen from turning off during TTS
 let wakeLock: WakeLockSentinel | null = null;
 

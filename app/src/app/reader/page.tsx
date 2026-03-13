@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useReaderStore } from "@/store/useReaderStore";
-import { stop } from "@/lib/tts";
+import { stop, stopPodcast } from "@/lib/tts";
 import ParagraphCard from "@/components/ParagraphCard";
 import TTSControls from "@/components/TTSControls";
 import AIExplainer from "@/components/AIExplainer";
 import SummaryCard from "@/components/SummaryCard";
+import PodcastPlayer from "@/components/PodcastPlayer";
 import { useSwipeable } from "react-swipeable";
 import { useEffect } from "react";
 
@@ -19,16 +20,20 @@ export default function ReaderPage() {
     goPrev,
     setIsPlaying,
     setHighlightRange,
+    isPodcastMode,
+    resetPodcast,
   } = useReaderStore();
 
   // Stop TTS on unmount
   useEffect(() => {
     return () => {
       stop();
+      stopPodcast();
       setIsPlaying(false);
       setHighlightRange(null);
+      resetPodcast();
     };
-  }, [setIsPlaying, setHighlightRange]);
+  }, [setIsPlaying, setHighlightRange, resetPodcast]);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {
@@ -108,8 +113,13 @@ export default function ReaderPage() {
 
       {/* Card area */}
       <div className="flex-1 flex flex-col justify-center px-4 py-6 gap-4">
-        {isSummaryCard ? (
-          <SummaryCard paragraphs={currentNewsletter.paragraphs} />
+        {isPodcastMode ? (
+          <PodcastPlayer />
+        ) : isSummaryCard ? (
+          <>
+            <SummaryCard paragraphs={currentNewsletter.paragraphs} />
+            <PodcastPlayer />
+          </>
         ) : (
           <>
             <ParagraphCard text={paragraph} />
