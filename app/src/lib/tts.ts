@@ -315,6 +315,7 @@ export function isPaused(): boolean {
 
 // --- Podcast mode (sequential TTS) ---
 let podcastCancelled = false;
+let podcastSkipping = false;
 let podcastSegments: string[] = [];
 let podcastIndex = 0;
 let podcastResolve: (() => void) | null = null;
@@ -346,6 +347,8 @@ export async function speakPodcast(
         onStart: undefined,
         onBoundary: undefined,
         onEnd: () => {
+          // Guard: if skipping, don't resolve here — podcastSkip will resolve
+          if (podcastSkipping) return;
           callbacks.onSegmentEnd?.(podcastIndex);
           podcastResolve = null;
           resolve();
@@ -365,22 +368,24 @@ export function podcastSkip(delta: number) {
   const newIndex = Math.max(0, Math.min(podcastIndex + delta, podcastSegments.length - 1));
   if (newIndex === podcastIndex) return;
 
-  // Stop current segment, jump to new index
+  podcastSkipping = true;
+  stop(); // onEnd won't resolve because podcastSkipping is true
+  podcastSkipping = false;
+
   podcastIndex = newIndex - 1; // will be incremented by loop
-  stop();
-  if (podcastResolve) {
-    podcastResolve();
-    podcastResolve = null;
-  }
+  const r = podcastResolve;
+  podcastResolve = null;
+  r?.();
 }
 
 export function stopPodcast() {
   podcastCancelled = true;
-  if (podcastResolve) {
-    podcastResolve();
-    podcastResolve = null;
-  }
+  podcastSkipping = true;
   stop();
+  podcastSkipping = false;
+  const r = podcastResolve;
+  podcastResolve = null;
+  r?.();
 }
 
 // Wake Lock to prevent screen from turning off during TTS
